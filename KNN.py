@@ -1,6 +1,60 @@
 import sys
-import pandas as pd
-from scipy.io import arff
+import math
+
+
+def doStuff(anotherList, distMeasure):
+    finalLabelList = []
+    print("FOR " + distMeasure + " DISTANCE AND K = " + str(k) + ":")
+    for row in anotherList:
+        i = 0
+        nearestLabels = []
+        while i < k:
+            label = trainData[row[i][1]][len(trainData[0]) - 1].strip('\n')
+            nearestLabels.append([label, row[i][0]])
+            i += 1
+        finalLabelList.append(nearestLabels)
+
+    print(finalLabelList)
+    Classifications = []
+    classLabel1 = finalLabelList[0][0][0]
+    classLabel2 = ''
+    for sample in finalLabelList:
+        class1 = 0
+        class2 = 0
+        for label in sample:
+            if label[0] != classLabel1:
+                classLabel2 = label[0]
+                class2 += (1 / (label[1] ** 2 + 1))
+            else:
+                class1 += (1 / (label[1] ** 2 + 1))
+        if (class2 > class1):
+            Classifications.append(classLabel2)
+        else:
+            Classifications.append(classLabel1)
+    i = 0
+    TruePos = 0
+    TrueNeg = 0
+    FalsePos = 0
+    FalseNeg = 0
+    for row in testData:
+        if row[len(testData[0]) - 1].strip('\n') == classLabel1:
+            if Classifications[i] == classLabel1:
+                TruePos += 1
+            else:
+                FalseNeg += 1
+        else:
+            if Classifications[i] == classLabel2:
+                TrueNeg += 1
+            else:
+                FalsePos += 1
+        i += 1
+    print("CLASS LABEL 1: " + classLabel1)
+    print("CLASS LABEL 2: " + classLabel2)
+    print("TRUE POS: " + str(TruePos))
+    print("TRUE NEG: " + str(TrueNeg))
+    print("FALSE NEG: " + str(FalseNeg))
+    print("FALSE POS: " + str(FalsePos))
+
 
 trainFile = open("ALL_AML_SigGene.train.arff", 'r')
 testFile = open("ALL_AML_SigGene.test.arff", 'r')
@@ -31,62 +85,38 @@ while dataLine is not "":
     dataLine = testFile.readline()
 print(testData)
 
-anotherList = []
+manotherList = []
+canotherList = []
+eanotherList = []
 for rowTest in testData:
-    listDist = []
+    mlistDist = []
+    clistDist = []
+    elistDist = []
     x = 0
     while x < len(trainData):
         i = 0
-        dist = 0
+        mdist = 0
+        cdist = 0
+        edist = 0
         while i < len(trainData[0]) - 1:
-            dist += abs(float(rowTest[i]) - float(trainData[x][i]))
+            mdist += abs(float(rowTest[i]) - float(trainData[x][i]))
+            if abs(float(rowTest[i]) - float(trainData[x][i])) > cdist:
+                cdist = abs(float(rowTest[i]) - float(trainData[x][i]))
+            edist += (float(rowTest[i]) - float(trainData[x][i]))**2
             i += 1
-        listDist.append([dist, x])
+        elistDist.append([math.sqrt(edist), x])
+        mlistDist.append([mdist, x])
+        clistDist.append([cdist, x])
         x += 1
-    listDist.sort()
-    anotherList.append(listDist)
+    elistDist.sort()
+    mlistDist.sort()
+    clistDist.sort()
+    manotherList.append(mlistDist)
+    canotherList.append(clistDist)
+    eanotherList.append(elistDist)
 
-print(anotherList)
-finalLabelList = []
-for row in anotherList:
-    i = 0
-    nearestLabels = []
-    while i < k:
-        label = trainData[row[i][1]][len(trainData[0]) - 1].strip('\n')
-        nearestLabels.append(label)
-        i += 1
-    finalLabelList.append(nearestLabels)
+doStuff(eanotherList, "EUCLIDEAN")
+doStuff(manotherList, "MANHATTAN")
+doStuff(canotherList, "CHEBYCHEV")
 
-print(finalLabelList)
-classifications = []
-for sample in finalLabelList:
-    classLabel1 = sample[0]
-    classLabel2 = ''
-    class1 = 0
-    class2 = 0
-    for label in sample:
-        if label != classLabel1:
-            classLabel2 = label
-            class2 += 1
-        else:
-            class1 += 1
-    if(class2 > class1):
-        classifications.append(classLabel2)
-    else:
-        classifications.append(classLabel1)
-print(classifications)
-i = 0
-wrongCount = 0
-for row in testData:
-    if row[len(testData[0]) - 1].strip('\n') != classifications[i]:
-        wrongCount += 1
-        print(i)
-    i += 1
 
-print(wrongCount)
-#trainingData = arff.loadarff("ALL_AML_SigGene.train.arff")
-#testData = arff.loadarff("ALL_AML_SigGene.test.arff")
-
-#df = pd.DataFrame(trainingData)
-#print(df[0].size)
-#print(df[1][0][0])
